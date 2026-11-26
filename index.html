@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef1ef">
+  <title>Capteur de distance — Tableau de bord</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <h1>Capteur de distance</h1>
+      <p class="sub">Capteur ultrason HC-SR04 branché sur un Arduino</p>
+    </div>
+    <div class="conn" role="status"><span id="connDot" class="dot"></span><span id="connText">Connexion au serveur…</span></div>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Mesure en direct">
+    <div class="live">
+      <div class="readout">
+        <div class="big"><strong id="currentDistance">—</strong><span>cm</span></div>
+        <div>
+          <p id="stateText" class="state-text">En attente de la première mesure</p>
+          <p id="lastSeen" class="muted"></p>
+        </div>
+      </div>
+
+      <svg id="scene" class="scene" viewBox="0 0 800 270" role="img" aria-label="Position de l'objet devant le capteur">
+        <rect x="118" y="40" width="80" height="180" class="z-danger"/>
+        <rect x="198" y="40" width="80" height="180" class="z-attn"/>
+        <rect x="278" y="40" width="480" height="180" class="z-ok"/>
+        <text x="158" y="60" class="zone-label t-danger" text-anchor="middle">Danger</text>
+        <text x="238" y="60" class="zone-label t-attn" text-anchor="middle">Attention</text>
+        <text x="518" y="60" class="zone-label t-ok" text-anchor="middle">Normal</text>
+        <g class="ruler">
+          <line x1="118" y1="228" x2="758" y2="228"/>
+          <g id="ticks"></g>
+        </g>
+        <g class="echo">
+          <path d="M137.7 116.2A24 24 0 0 1 137.7 143.8"/>
+          <path d="M150.8 107A40 40 0 0 1 150.8 153"/>
+          <path d="M163.9 97.9A56 56 0 0 1 163.9 162.1"/>
+        </g>
+        <g class="sensor">
+          <rect x="62" y="60" width="36" height="140" rx="4"/>
+          <rect x="98" y="82" width="20" height="30" rx="3"/>
+          <rect x="98" y="148" width="20" height="30" rx="3"/>
+        </g>
+        <line id="dimLine" class="dim" x1="118" y1="130" x2="118" y2="130"/>
+        <text id="dimLabel" class="dim-label" x="118" y="118" text-anchor="middle">—</text>
+        <g id="obj"><rect id="objRect" x="0" y="70" width="24" height="120" rx="4"/></g>
+      </svg>
+    </div>
+
+    <aside class="device" aria-label="Montage Arduino">
+      <h2>Écran et alertes du montage</h2>
+      <div class="lcd" id="lcd" aria-live="polite"></div>
+      <ul class="leds">
+        <li><span id="ledRed" class="led red"></span>LED rouge</li>
+        <li><span id="ledOrange" class="led orange"></span>LED orange</li>
+        <li><span id="ledGreen" class="led green"></span>LED verte</li>
+      </ul>
+      <p class="buzzer"><span id="buzzerIcon" class="buzz-icon" aria-hidden="true"></span>Buzzer : <strong id="buzzerText">silencieux</strong></p>
+    </aside>
+  </section>
+
+  <section class="panel" aria-labelledby="statsTitle">
+    <div class="panel-head"><h2 id="statsTitle">Dernières 24 heures</h2><span class="chip" id="totalChip">0 mesure en base</span></div>
+    <dl class="stats">
+      <div><dt>Plus proche</dt><dd id="sMin">—</dd></div>
+      <div><dt>Plus éloigné</dt><dd id="sMax">—</dd></div>
+      <div><dt>Moyenne</dt><dd id="sAvg">—</dd></div>
+      <div><dt>Mesures</dt><dd id="sCount">—</dd></div>
+    </dl>
+    <div class="split" id="split" role="img" aria-label="Répartition du temps par état">
+      <span class="s-danger"></span><span class="s-attn"></span><span class="s-ok"></span>
+    </div>
+    <p class="split-legend muted" id="splitLegend">Aucune mesure sur la période.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="chartTitle">
+    <div class="panel-head"><h2 id="chartTitle">Évolution de la distance</h2><span class="chip" id="chartChip">0 mesure</span></div>
+    <div class="chart-wrap">
+      <canvas id="chart" aria-label="Graphique des distances mesurées"></canvas>
+      <div id="emptyChart" class="empty">Le graphique apparaît dès les premières mesures.</div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="tableTitle">
+    <div class="panel-head">
+      <h2 id="tableTitle">Base de données</h2>
+      <div class="filters" id="filters">
+        <button type="button" data-f="all" aria-pressed="true">Toutes</button>
+        <button type="button" data-f="danger" aria-pressed="false">Danger</button>
+        <button type="button" data-f="attention" aria-pressed="false">Attention</button>
+        <button type="button" data-f="normal" aria-pressed="false">Normal</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>N°</th><th>Date et heure</th><th>Distance</th><th>État</th></tr></thead>
+        <tbody id="rowsBody"><tr><td colspan="4" class="empty-cell">Aucune donnée enregistrée.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Les données se mettent à jour toutes les 2 secondes. Seuils : danger sous 5 cm, attention de 5 à 10 cm, normal au-delà.</footer>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
