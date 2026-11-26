@@ -23,7 +23,7 @@ const pool = new Pool({
 });
 
 app.use(express.json({ limit: "20kb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(__dirname));
 
 function getStatus(distance) {
   if (distance < 5) return "danger";
@@ -144,7 +144,7 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 initializeDatabase()
